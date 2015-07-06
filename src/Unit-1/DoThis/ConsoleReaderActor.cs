@@ -4,19 +4,18 @@ using Akka.Actor;
 namespace WinTail
 {
     /// <summary>
-    /// Actor responsible for reading FROM the console. 
-    /// Also responsible for calling <see cref="ActorSystem.Shutdown"/>.
+    /// Actor responsible for reading FROM the console.
+    /// Also responsible for calling <see cref="ActorSystem.Shutdown" />.
     /// </summary>
-    class ConsoleReaderActor : UntypedActor
+    internal class ConsoleReaderActor : UntypedActor
     {
         public const string ExitCommand = "exit";
         public const string StartCommand = "start";
-        
-        private readonly IActorRef _consoleWriterActor;
+        private readonly IActorRef _validationActor;
 
-        public ConsoleReaderActor(IActorRef consoleWriterActor)
+        public ConsoleReaderActor(IActorRef validationActor)
         {
-            _consoleWriterActor = consoleWriterActor;
+            _validationActor = validationActor;
         }
 
         protected override void OnReceive(object message)
@@ -25,10 +24,6 @@ namespace WinTail
             {
                 DoPrintInstructions();
             }
-            else if (message is Messages.InputError)
-            {
-                _consoleWriterActor.Tell(message as Messages.InputError);
-            }
 
             GetAndValidateInput();
         }
@@ -36,32 +31,16 @@ namespace WinTail
         private void GetAndValidateInput()
         {
             var message = Console.ReadLine();
-            if (string.IsNullOrEmpty(message))
+            if (!string.IsNullOrEmpty(message) &&
+                string.Equals(message, ExitCommand, StringComparison.OrdinalIgnoreCase))
             {
-                // signal that the user needs to supply an input, as previously
-                // received input was blank
-                Self.Tell(new Messages.NullInputError("No input received."));
-            }
-            else if (string.Equals(message, ExitCommand, StringComparison.OrdinalIgnoreCase))
-            {
-                // shut down the entire actor system (allows the process to exit)
+                // if user typed ExitCommand, shut down the entire actor system (allows the process to exit)
                 Context.System.Shutdown();
+                return;
             }
-            else
-            {
-                var valid = IsValid(message);
-                if (valid)
-                {
-                    _consoleWriterActor.Tell(new Messages.InputSuccess("Thank you! Message was valid."));
 
-                    // continue reading messages from console
-                    Self.Tell(new Messages.ContinueProcessing());
-                }
-                else
-                {
-                    Self.Tell(new Messages.ValidationError("Invalid: input had odd number of characters."));
-                }
-            }
+            // otherwise, just hand message off to validation actor (by telling its actor ref)
+            _validationActor.Tell(message);
         }
 
         private static void DoPrintInstructions()
@@ -70,35 +49,5 @@ namespace WinTail
             Console.WriteLine("Some entries will pass validation, and some won't...\n\n");
             Console.WriteLine("Type 'exit' to quit this application at any time.\n");
         }
-
-        /// <summary>
-        /// Validates <see cref="message"/>.
-        /// Currently says messages are valid if contain even number of characters.
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        private static bool IsValid(string message)
-        {
-            var valid = message.Length % 2 == 0;
-            return valid;
-        }
     }
 }
-
-/*
-
-
-            var read = Console.ReadLine();
-
-            _consoleWriterActor.Tell(read);
-
-            if (!string.IsNullOrEmpty(read) && String.Equals(read, ExitCommand, StringComparison.OrdinalIgnoreCase))
-            {
-                // shut down the system (acquire handle to system via
-                // this actors context)
-                Context.System.Shutdown();
-                return;
-            }
-
-            Self.Tell("bob");
-*/

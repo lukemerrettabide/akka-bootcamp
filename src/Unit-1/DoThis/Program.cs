@@ -1,27 +1,26 @@
-﻿using System;
 ﻿using Akka.Actor;
 
 namespace WinTail
 {
-    class Program
+    internal class Program
     {
         public static ActorSystem MyActorSystem;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             MyActorSystem = ActorSystem.Create("MyActorSystem");
 
-            // time to make your first actors!
-            //YOU NEED TO FILL IN HERE
-            // make consoleWriterActor using these props: Props.Create(() => new ConsoleWriterActor())
-            // make consoleReaderActor using these props: Props.Create(() => new ConsoleReaderActor(consoleWriterActor))
+            var consoleWriterProps = Props.Create<ConsoleWriterActor>();
+            var consoleWriterActor = MyActorSystem.ActorOf(consoleWriterProps, "consoleWriterActor");
 
-            var consoleWriterActor = MyActorSystem.ActorOf(Props.Create<ConsoleWriterActor>());
-            var consoleReaderActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleReaderActor(consoleWriterActor)));
+            var validationProps = Props.Create<ValidationActor>(consoleWriterActor);
+            var validationActor = MyActorSystem.ActorOf(validationProps, "validationActor");
+
+            var consoleReaderProps = Props.Create<ConsoleReaderActor>(validationActor);
+            var consoleReaderActor = MyActorSystem.ActorOf(consoleReaderProps, "consoleReaderActor");
 
             consoleReaderActor.Tell(ConsoleReaderActor.StartCommand);
 
-            // blocks the main thread from exiting until the actor system is shut down
             MyActorSystem.AwaitTermination();
         }
     }

@@ -11,6 +11,8 @@ namespace WinTail
     {
         protected override void OnReceive(object message)
         {
+            Console.WriteLine("Received a message from" + Context.Sender.Path);
+
             if (message is Messages.InputError)
             {
                 var msg = message as Messages.InputError;
