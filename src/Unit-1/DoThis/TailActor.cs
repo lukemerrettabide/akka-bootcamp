@@ -96,7 +96,7 @@ namespace WinTail
                     _reporterActor.Tell(text);
                 }
 
-                throw new NotImplementedException("Banana");
+                //throw new NotImplementedException("Banana");
             }
             else if (message is FileError)
             {
