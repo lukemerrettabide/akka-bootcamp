@@ -47,5 +47,23 @@ namespace ChartApp
             var series = ChartDataHelper.RandomSeries("FakeSeries" + _seriesCounter.GetAndIncrement());
             _chartActor.Tell(new ChartingActor.AddSeries(series));
         }
+<<<<<<< HEAD
+
+        private void btnCpu_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void sysChart_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnDisk_Click(object sender, EventArgs e)
+        {
+
+        }
+=======
+>>>>>>> 7e2be849fd4561bae49ec651d16462f3bf00bf2c
     }
 }
