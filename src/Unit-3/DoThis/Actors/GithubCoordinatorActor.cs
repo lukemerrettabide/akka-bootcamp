@@ -91,7 +91,7 @@ namespace GithubActors.Actors
                 BecomeWorking(job.Repo);
 
                 //kick off the job to query the repo's list of starrers
-                _githubWorker.Tell(new RetryableQuery(new GithubWorkerActor.QueryStarrers(job.Repo), 4));
+                _githubWorker.Tell(new RetryableQuery(new GithubWorkerActor.AllQueryStarrers(job.Repo), 4));
             });
         }
 
@@ -182,8 +182,8 @@ namespace GithubActors.Actors
             //query failed, but can be retried
             Receive<RetryableQuery>(query => query.CanRetry, query => _githubWorker.Tell(query));
 
-            //query failed, can't be retried, and it's a QueryStarrers operation - means the entire job failed
-            Receive<RetryableQuery>(query => !query.CanRetry && query.Query is GithubWorkerActor.QueryStarrers, query =>
+            //query failed, can't be retried, and it's a AllQueryStarrers operation - means the entire job failed
+            Receive<RetryableQuery>(query => !query.CanRetry && query.Query is GithubWorkerActor.AllQueryStarrers, query =>
             {
                 _receivedInitialUsers = true;
                 foreach (var subscriber in _subscribers)
@@ -193,7 +193,7 @@ namespace GithubActors.Actors
                 BecomeWaiting();
             });
 
-            //query failed, can't be retried, and it's a QueryStarrers operation - means individual operation failed
+            //query failed, can't be retried, and it's a AllQueryStarrers operation - means individual operation failed
             Receive<RetryableQuery>(query => !query.CanRetry && query.Query is GithubWorkerActor.QueryStarrer, query => _githubProgressStats.IncrementFailures());
         }
     }
